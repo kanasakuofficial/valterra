@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-PRO V25 - Modern Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #1e293b; scroll-behavior: smooth; }
+        .rupiah-output { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; }
+        .tab-content { display: none; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .tab-content.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .apple-dock {
+            position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); z-index: 1000;
+            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px) saturate(180%);
+            padding: 0.8rem 1rem; border-radius: 2.2rem; display: flex; align-items: center; gap: 0.3rem;
+            border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+        }
+        .dock-item { display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.3s; cursor: pointer; width: 4.2rem; height: 4.2rem; border-radius: 1.2rem; }
+        .dock-item:hover { transform: scale(1.15) translateY(-5px); }
+        .dock-icon-wrapper { width: 2.5rem; height: 2.5rem; border-radius: 0.9rem; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; margin-bottom: 4px; }
+        .dock-label { font-size: 0.6rem; font-weight: 800; color: #475569; text-transform: capitalize; }
+
+        /* Icon Home Modern (Bento Style) */
+        .ios-home { background: linear-gradient(135deg, #007AFF 0%, #0051FF 100%); color: white; }
+        .ios-payroll { background: #5856D6; color: white; }
+        .ios-kas { background: #34C759; color: white; }
+        .ios-roas { background: #FF9500; color: white; }
+        .ios-setting { background: #8E8E93; color: white; }
+        .ios-print { background: #FF3B30; color: white; }
+
+        .card-modern { background: white; border-radius: 2.5rem; border: 1px solid rgba(241, 245, 249, 1); transition: all 0.3s; }
+        .card-modern:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05); }
+        
+        .gradient-dark { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+        
+        @media print {
+            body * { visibility: hidden !important; }
+            #printArea, #printArea * { visibility: visible !important; }
+            #printArea { display: block !important; position: absolute; left: 0; top: 0; width: 100%; background: white; }
+        }
+        #printArea { display: none; }
+    </style>
+</head>
+<body class="pt-24 pb-44">
+
+    <div id="printArea" class="p-10 text-black">
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 4px double #000; padding-bottom: 15px;">
+            <h1 id="printHeaderTitle" style="font-size: 28px; font-weight: 900; margin: 0; text-transform: uppercase;">LAPORAN</h1>
+            <p style="font-size: 14px; margin: 5px 0;">Valterra & Kanasaku Management System</p>
+            <p id="printSubDate" style="font-size: 12px; font-weight: bold; margin-top: 5px;"></p>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <thead id="printHead"></thead>
+            <tbody id="printTableBody"></tbody>
+            <tfoot>
+                <tr style="font-weight: 900; background-color: #f8fafc;">
+                    <td id="labelTotalPrint" colspan="3" style="border: 1px solid #000; padding: 12px; text-align: right;">TOTAL</td>
+                    <td id="printTotalAkhir" style="border: 1px solid #000; padding: 12px; text-align: right;"></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <nav class="fixed top-0 left-0 right-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-slate-100 no-print">
+        <div class="max-w-6xl mx-auto px-6 flex justify-between items-center h-20">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-slate-200"><i class="fas fa-shapes"></i></div>
+                <div>
+                    <h1 class="text-lg font-black text-slate-800 leading-none tracking-tighter">K-PRO <span class="text-blue-600">V25</span></h1>
+                    <p class="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mt-1">Valterra & Kanasaku</p>
+                </div>
+            </div>
+            <div id="dashFilterContainer"></div>
+        </div>
+    </nav>
+
+    <div class="apple-dock no-print">
+        <div onclick="switchTab('home')" class="dock-item">
+            <div class="dock-icon-wrapper ios-home"><i class="fas fa-layer-group"></i></div>
+            <span class="dock-label">Dash</span>
+        </div>
+        <div onclick="switchTab('payroll')" class="dock-item">
+            <div class="dock-icon-wrapper ios-payroll"><i class="fas fa-wallet"></i></div>
+            <span class="dock-label">Gaji</span>
+        </div>
+        <div onclick="switchTab('kas')" class="dock-item">
+            <div class="dock-icon-wrapper ios-kas"><i class="fas fa-exchange-alt"></i></div>
+            <span class="dock-label">Kas</span>
+        </div>
+        <div onclick="switchTab('roas')" class="dock-item">
+            <div class="dock-icon-wrapper ios-roas"><i class="fas fa-chart-line"></i></div>
+            <span class="dock-label">Shopee</span>
+        </div>
+        <div onclick="switchTab('master')" class="dock-item">
+            <div class="dock-icon-wrapper ios-setting"><i class="fas fa-user-gear"></i></div>
+            <span class="dock-label">Setting</span>
+        </div>
+        <div class="w-px h-8 bg-slate-200 mx-1"></div>
+        <div onclick="preparePrintKas()" class="dock-item">
+            <div class="dock-icon-wrapper ios-print"><i class="fas fa-print"></i></div>
+            <span class="dock-label">Print</span>
+        </div>
+    </div>
+
+    <main class="max-w-6xl mx-auto px-6 no-print">
+        
+        <section id="tabHome" class="tab-content active">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 space-y-8">
+                    <div class="gradient-dark p-10 rounded-[3rem] text-white shadow-2xl relative overflow-hidden min-h-[250px] flex flex-col justify-between">
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-blue-400 text-xs font-black uppercase tracking-widest mb-1">Available Balance</p>
+                                    <h2 class="text-5xl font-black rupiah-output" id="homeSaldo">Rp 0</h2>
+                                </div>
+                                <div class="bg-white/10 p-4 rounded-3xl backdrop-blur-md border border-white/20">
+                                    <i class="fas fa-bolt-lightning text-2xl text-yellow-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 relative z-10">
+                            <button onclick="backupData()" class="bg-blue-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-colors shadow-lg">Backup Now</button>
+                            <button onclick="$('restoreInput').click()" class="bg-white/10 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest backdrop-blur-md hover:bg-white/20 transition-colors border border-white/10">Restore</button>
+                            <input type="file" id="restoreInput" class="hidden" accept=".json" onchange="restoreBackup(event)">
+                        </div>
+                        <div class="absolute -right-10 -top-10 w-48 h-48 bg-blue-600/20 rounded-full blur-[80px]"></div>
+                        <div class="absolute -left-10 -bottom-10 w-48 h-48 bg-purple-600/10 rounded-full blur-[80px]"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="card-modern p-8 flex items-center gap-6 group">
+                            <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center text-2xl shadow-inner group-hover:bg-emerald-600 group-hover:text-white transition-all"><i class="fas fa-arrow-trend-up"></i></div>
+                            <div>
+                                <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Monthly Income</p>
+                                <h4 class="text-2xl font-black text-slate-800 rupiah-output" id="homeMasuk">Rp 0</h4>
+                            </div>
+                        </div>
+                        <div class="card-modern p-8 flex items-center gap-6 group">
+                            <div class="w-16 h-16 bg-rose-50 text-rose-600 rounded-3xl flex items-center justify-center text-2xl shadow-inner group-hover:bg-rose-600 group-hover:text-white transition-all"><i class="fas fa-arrow-trend-down"></i></div>
+                            <div>
+                                <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Monthly Expense</p>
+                                <h4 class="text-2xl font-black text-slate-800 rupiah-output" id="homeKeluar">Rp 0</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="card-modern p-8 bg-rose-50 border-rose-100 relative overflow-hidden group">
+                        <p class="text-rose-400 text-[10px] font-black uppercase tracking-widest mb-1">Payroll Obligations</p>
+                        <h3 class="text-3xl font-black text-rose-600 rupiah-output mb-4" id="homeGajiPending">Rp 0</h3>
+                        <div class="w-full bg-rose-200/50 h-2 rounded-full"><div class="bg-rose-500 h-full rounded-full" style="width: 40%"></div></div>
+                        <i class="fas fa-receipt absolute -right-4 -bottom-4 text-8xl text-rose-200/30 group-hover:scale-110 transition-transform"></i>
+                    </div>
+
+                    <div class="card-modern p-8 border-slate-100">
+                        <div class="flex justify-between items-center mb-6">
+                            <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest">Active Staff</p>
+                            <span class="bg-slate-900 text-white text-[10px] px-3 py-1 rounded-full font-black shadow-lg" id="homeEmp">0</span>
+                        </div>
+                        <div class="flex -space-x-3">
+                            <div class="w-10 h-10 rounded-full border-2 border-white bg-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-600">WN</div>
+                            <div class="w-10 h-10 rounded-full border-2 border-white bg-emerald-100 flex items-center justify-center text-[10px] font-bold text-emerald-600">IP</div>
+                            <div class="w-10 h-10 rounded-full border-2 border-white bg-purple-100 flex items-center justify-center text-[10px] font-bold text-purple-600">AA</div>
+                            <div class="w-10 h-10 rounded-full border-2 border-white bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold">+</div>
+                        </div>
+                    </div>
+
+                    <div class="card-modern p-8 gradient-dark text-white shadow-xl shadow-blue-100">
+                        <h5 class="text-blue-400 font-black text-[10px] uppercase tracking-widest mb-4">Business Health</h5>
+                        <div class="space-y-4">
+                            <div class="flex justify-between text-xs"><span>Operational</span><span class="font-black text-emerald-400">Excellent</span></div>
+                            <div class="flex justify-between text-xs"><span>Ad Performance</span><span class="font-black text-blue-400">Stable</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tabPayroll" class="tab-content">
+            <div id="payrollContent"></div>
+        </section>
+
+        <section id="tabKas" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-1">
+                    <div class="card-modern p-10 sticky top-24 border-slate-200">
+                        <h4 class="text-xl font-black text-slate-800 mb-8 italic">New Record</h4>
+                        <form id="kasForm" class="space-y-4">
+                            <input type="date" id="kasDate" required class="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold outline-none mb-3">
+                            <select id="kasType" onchange="updateKasOptions()" class="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-black outline-none"><option value="masuk">UANG MASUK (+)</option><option value="keluar">UANG KELUAR (-)</option></select>
+                            <select id="kasKetSelect" onchange="checkLainnya()" class="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold outline-none"></select>
+                            <input type="text" id="kasKetManual" placeholder="Detail..." class="hidden w-full bg-slate-50 border-none rounded-2xl p-4 text-sm outline-none">
+                            <input type="text" id="kasJml" oninput="formatInputRp(this)" placeholder="Nominal Rp" required class="w-full bg-slate-900 text-white border-none rounded-2xl p-4 text-2xl font-black outline-none">
+                            <button type="submit" class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl uppercase tracking-widest hover:bg-blue-700 transition-all">Save Record</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="lg:col-span-2">
+                    <div class="card-modern p-10 border-slate-200">
+                        <div class="flex justify-between items-center mb-8">
+                            <h4 class="text-xl font-black uppercase text-slate-400 italic tracking-tighter">History</h4>
+                            <div class="flex gap-2">
+                                <input type="date" id="kasFilterStart" class="bg-slate-50 p-2 rounded-xl text-[10px] font-black border-none">
+                                <input type="date" id="kasFilterEnd" class="bg-slate-50 p-2 rounded-xl text-[10px] font-black border-none">
+                            </div>
+                        </div>
+                        <div class="max-h-[600px] overflow-y-auto font-bold uppercase text-[11px]">
+                            <table class="w-full text-sm text-left"><tbody id="kasBody" class="divide-y divide-slate-50"></tbody></table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tabRoas" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="card-modern p-10 border-slate-200">
+                    <h4 class="text-xl font-black text-slate-800 mb-8 italic text-blue-600">Marketplace Calculator</h4>
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><label class="text-[10px] font-black uppercase text-slate-400 block mb-1 tracking-widest">Base HPP</label><input type="text" id="roasHpp" oninput="formatInputRp(this); hitungRoasLengkap()" placeholder="Rp" class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none outline-none"></div>
+                            <div><label class="text-[10px] font-black uppercase text-slate-400 block mb-1 tracking-widest">Selling Price</label><input type="text" id="roasJual" oninput="formatInputRp(this); hitungRoasLengkap()" placeholder="Rp" class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none outline-none"></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><label class="text-[10px] font-black uppercase text-slate-400 block mb-1 tracking-widest">Admin %</label><input type="number" id="roasAdminPersen" oninput="hitungRoasLengkap()" value="6" class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none outline-none"></div>
+                            <div><label class="text-[10px] font-black uppercase text-slate-400 block mb-1 tracking-widest">Affiliate %</label><input type="number" id="roasAffPersen" oninput="hitungRoasLengkap()" value="0" class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none outline-none"></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><label class="text-[10px] font-black uppercase text-slate-400 block mb-1 tracking-widest">Ads Budget</label><input type="text" id="roasBudgetIklan" oninput="formatInputRp(this); hitungRoasLengkap()" placeholder="Rp" class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none outline-none"></div>
+                            <div><label class="text-[10px] font-black uppercase text-slate-400 block mb-1 tracking-widest">Voucher</label><input type="text" id="roasVoucher" oninput="formatInputRp(this); hitungRoasLengkap()" placeholder="Rp" class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none outline-none"></div>
+                        </div>
+                        <div class="p-6 bg-slate-900 rounded-[2.5rem]">
+                            <label class="text-[10px] font-black uppercase text-slate-500 block mb-2 text-center tracking-[0.2em]">Target Profit Pekan Ini</label>
+                            <input type="text" id="roasTargetProfit" oninput="formatInputRp(this); hitungRoasLengkap()" placeholder="Misal: 5.000.000" class="w-full bg-white/5 p-4 rounded-2xl font-black text-center text-white border border-white/10 outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-modern p-10 bg-slate-900 text-white">
+                    <h4 class="text-lg font-black text-blue-400 mb-6 italic uppercase tracking-tighter">Result Analysis</h4>
+                    
+                    <div class="p-6 bg-white/5 rounded-3xl border border-white/10 mb-6 text-center">
+                        <p class="text-[10px] font-bold text-slate-500 uppercase mb-1">Net Profit / Pcs</p>
+                        <h3 class="text-5xl font-black text-emerald-400 rupiah-output" id="resProfit">Rp 0</h3>
+                        <p id="resMarginPersen" class="text-[10px] text-slate-600 mt-2 uppercase font-black tracking-widest">Margin: 0%</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="p-5 bg-white/5 rounded-3xl border border-white/10">
+                            <p class="text-[9px] font-bold text-rose-400 uppercase mb-1">Limit BEP</p>
+                            <h3 class="text-2xl font-black" id="resBepRoas">0.0x</h3>
+                        </div>
+                        <div class="p-5 bg-blue-600 rounded-3xl">
+                            <p class="text-[9px] font-black text-blue-100 uppercase mb-1">Safe Target</p>
+                            <h3 class="text-2xl font-black" id="resOptimalRoas">0.0x</h3>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="p-5 bg-slate-800 rounded-3xl border border-slate-700">
+                            <p class="text-[9px] font-black text-slate-500 uppercase mb-1">Weekly Target</p>
+                            <h3 class="text-2xl font-black text-white" id="resTargetQty">0 Pcs</h3>
+                        </div>
+                        <div class="p-5 bg-slate-800 rounded-3xl border border-slate-700 text-emerald-400">
+                            <p class="text-[9px] font-black text-slate-500 uppercase mb-1 text-white">Daily Target</p>
+                            <h3 class="text-2xl font-black" id="resTargetHarian">0 Pcs</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tabMaster" class="tab-content">
+            <div id="masterBody" class="card-modern p-10 border-slate-200"></div>
+        </section>
+
+    </main>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        const formatRp = n => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+        const formatDate = d => { if(!d) return '-'; const [y,m,d_] = d.split('-'); return `${d_}/${m}/${y}`; }
+        function formatInputRp(i) { let v = i.value.replace(/\D/g, ''); if(v === "") { i.value = ""; return; } i.value = new Intl.NumberFormat('id-ID').format(v); }
+        function parseRp(s) { if(typeof s === 'number') return s; if(!s) return 0; return parseInt(s.replace(/\./g, '')) || 0; }
+        
+        let db = { roles: [], master: [], payroll: [], kas: [] };
+
+        const defaultRoles = [{id: 1, name: "Jahit", wage: 9000}, {id: 2, name: "Paking", wage: 1000}, {id: 3, name: "Obras", wage: 2000}, {id: 4, name: "QC Barang", wage: 300000}, {id: 5, name: "Admin", wage: 700000}, {id: 6, name: "Driver", wage: 200000}];
+        const defaultMaster = [{id: 101, name: "Wina", role: "QC Barang"}, {id: 102, name: "Ipon", role: "Paking"}, {id: 103, name: "AAT", role: "Driver"}, {id: 104, name: "Rian", role: "Admin"}, {id: 105, name: "M. Encep", role: "Obras"}, {id: 106, name: "M. Encep (Jahit)", role: "Jahit"}, {id: 107, name: "M Wawan", role: "Jahit"}, {id: 108, name: "Ceu Euis", role: "Jahit"}, {id: 109, name: "Teh Sri", role: "Jahit"}, {id: 110, name: "M Ukun", role: "Jahit"}, {id: 111, name: "Wa Ujang", role: "Jahit"}];
+
+        function loadDB() {
+            db.roles = JSON.parse(localStorage.getItem('m_roles_v25')) || []; 
+            db.master = JSON.parse(localStorage.getItem('m_emp_v25')) || []; 
+            db.payroll = JSON.parse(localStorage.getItem('m_pay_v25')) || []; 
+            db.kas = JSON.parse(localStorage.getItem('m_kas_v25')) || []; 
+            if(db.roles.length === 0) db.roles = defaultRoles;
+            if(db.master.length === 0) db.master = defaultMaster;
+            saveAll();
+            const now = new Date();
+            const cm = (now.getMonth() + 1).toString().padStart(2, '0');
+            if($('dashFilterContainer')) $('dashFilterContainer').innerHTML = `<input type="month" id="dashFilter" onchange="renderDashboard()" class="bg-slate-50 text-slate-800 text-[10px] font-black outline-none p-3 rounded-2xl border-none shadow-inner" value="${now.getFullYear()}-${cm}">`;
+            updateKasOptions(); renderDashboard(); renderKasTable(); renderMaster(); renderPayroll();
+        }
+
+        function saveAll() { localStorage.setItem('m_roles_v25', JSON.stringify(db.roles)); localStorage.setItem('m_emp_v25', JSON.stringify(db.master)); localStorage.setItem('m_pay_v25', JSON.stringify(db.payroll)); localStorage.setItem('m_kas_v25', JSON.stringify(db.kas)); }
+
+        function backupData() { const d = JSON.stringify(db); const blob = new Blob([d], {type: "application/json"}); const url = URL.createObjectURL(blob); const l = document.createElement('a'); l.href = url; l.download = `backup_valterra_kanasaku.json`; l.click(); }
+
+        function restoreBackup(event) {
+            const file = event.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if(confirm("Restore data? Data saat ini akan diganti.")) {
+                        localStorage.setItem('m_roles_v25', JSON.stringify(data.roles || []));
+                        localStorage.setItem('m_emp_v25', JSON.stringify(data.master || []));
+                        localStorage.setItem('m_pay_v25', JSON.stringify(data.payroll || []));
+                        localStorage.setItem('m_kas_v25', JSON.stringify(data.kas || []));
+                        location.reload();
+                    }
+                } catch (err) { alert("File salah."); }
+            };
+            reader.readAsText(file);
+        }
+
+        function switchTab(tId) { document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active')); const target = $('tab'+tId.charAt(0).toUpperCase()+tId.slice(1)); if(target) target.classList.add('active'); window.scrollTo({top:0, behavior:'smooth'}); }
+
+        function hitungRoasLengkap() {
+            const hpp = parseRp($('roasHpp').value); const jual = parseRp($('roasJual').value);
+            const adminP = parseFloat($('roasAdminPersen').value) || 0; const affP = parseFloat($('roasAffPersen').value) || 0;
+            const budgetIklan = parseRp($('roasBudgetIklan').value); const voucher = parseRp($('roasVoucher').value);
+            const targetProfit = parseRp($('roasTargetProfit').value);
+
+            if(jual > 0) {
+                const biayaAdmin = Math.round((adminP / 100) * jual); const biayaAff = Math.round((affP / 100) * jual);
+                const profitBersih = jual - hpp - biayaAdmin - biayaAff - budgetIklan - voucher;
+                const marginP = (profitBersih / jual) * 100;
+                const marginKotor = jual - hpp - biayaAdmin - biayaAff - voucher;
+                const bepRoas = marginKotor > 0 ? (jual / marginKotor) : 0;
+                const optimalRoas = marginKotor > (jual * 0.2) ? (jual / (marginKotor - (jual * 0.2))) : bepRoas;
+
+                let targetQty = 0; let targetHarian = 0;
+                if(profitBersih > 0 && targetProfit > 0) { targetQty = Math.ceil(targetProfit / profitBersih); targetHarian = Math.ceil(targetQty / 7); }
+
+                $('resProfit').innerText = formatRp(profitBersih); $('resMarginPersen').innerText = "Margin: " + marginP.toFixed(1) + "%";
+                $('resBepRoas').innerText = bepRoas.toFixed(1) + "x"; $('resOptimalRoas').innerText = optimalRoas.toFixed(1) + "x";
+                $('resTargetQty').innerText = targetQty + " Pcs"; $('resTargetHarian').innerText = targetHarian + " Pcs";
+            }
+        }
+
+        function renderMaster() {
+            $('masterBody').innerHTML = `<h4 class="text-xl font-black mb-8 italic text-slate-800">Master Data</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-10"><div class="space-y-4"><h5 class="text-[10px] font-black uppercase text-slate-400">Position & Wage</h5><div class="flex gap-2"><input type="text" id="roleName" placeholder="Position" class="flex-1 p-4 bg-slate-50 rounded-2xl text-sm font-bold border-none"><input type="text" id="roleWage" oninput="formatInputRp(this)" placeholder="Wage" class="w-24 p-4 bg-slate-50 rounded-2xl text-sm font-bold border-none"><button onclick="addRole()" class="bg-slate-900 text-white px-5 rounded-2xl"><i class="fas fa-plus"></i></button></div><div id="listRoles" class="space-y-2"></div></div><div class="space-y-4"><h5 class="text-[10px] font-black uppercase text-slate-400">Staff Member</h5><div class="flex gap-2"><input type="text" id="empName" placeholder="Name" class="flex-1 p-4 bg-slate-50 rounded-2xl text-sm font-bold border-none"><select id="empRole" class="flex-1 p-4 bg-slate-50 rounded-2xl text-sm font-bold border-none"></select><button onclick="addEmp()" class="bg-blue-600 text-white px-5 rounded-2xl"><i class="fas fa-user-plus"></i></button></div><div id="listEmp" class="space-y-2"></div></div></div>`;
+            updateMasterUI();
+        }
+        function updateMasterUI() {
+            $('listRoles').innerHTML = db.roles.map(r => `<div class="flex justify-between p-4 bg-slate-50 rounded-2xl text-xs font-bold"><span>${r.name}</span><div class="flex gap-2"><span class="text-blue-600">${formatRp(r.wage)}</span><button onclick="delRole(${r.id})" class="text-rose-300"><i class="fas fa-times"></i></button></div></div>`).join('');
+            $('listEmp').innerHTML = db.master.map(e => `<div class="flex justify-between p-4 bg-slate-50 rounded-2xl text-xs font-bold"><span>${e.name}</span><div class="flex gap-2"><span class="text-slate-400">${e.role}</span><button onclick="delEmp(${e.id})" class="text-rose-300"><i class="fas fa-times"></i></button></div></div>`).join('');
+            $('empRole').innerHTML = db.roles.map(r => `<option value="${r.name}">${r.name}</option>`).join('');
+        }
+        function addRole() { const n = $('roleName').value; const w = parseRp($('roleWage').value); if(n && w) { db.roles.push({id:Date.now(), name:n, wage:w}); saveAll(); renderMaster(); } }
+        function addEmp() { const n = $('empName').value; const r = $('empRole').value; if(n && r) { db.master.push({id:Date.now(), name:n, role:r}); saveAll(); renderMaster(); } }
+        function delRole(id) { db.roles = db.roles.filter(r => r.id !== id); saveAll(); renderMaster(); }
+        function delEmp(id) { db.master = db.master.filter(e => e.id !== id); saveAll(); renderMaster(); }
+
+        function renderPayroll() {
+            $('payrollContent').innerHTML = `<div class="card-modern p-10 mb-8 border-slate-200"><h4 class="text-xl font-black mb-6 italic text-slate-800">Production Entry</h4><div class="grid grid-cols-1 md:grid-cols-4 gap-4"><input type="date" id="payDate" class="p-4 bg-slate-50 rounded-2xl font-bold border-none"><select id="payEmp" class="p-4 bg-slate-50 rounded-2xl font-bold border-none">${db.master.map(e => `<option value="${e.id}">${e.name} (${e.role})</option>`).join('')}</select><input type="number" id="payQty" placeholder="Qty" class="p-4 bg-slate-50 rounded-2xl font-bold border-none"><button onclick="addPayroll()" class="bg-blue-600 text-white font-black rounded-2xl uppercase tracking-widest">Submit</button></div></div><div class="card-modern p-10 border-slate-200"><div class="flex justify-between items-center mb-8"><h4 class="text-xl font-black uppercase text-slate-400 italic">Pending Gaji</h4><button onclick="preparePrintGaji()" class="bg-slate-900 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-slate-200"><i class="fas fa-print mr-2"></i> Print Recap</button></div><table class="w-full text-left text-sm font-bold"><tbody id="payrollBody" class="divide-y divide-slate-50"></tbody></table></div>`;
+            $('payDate').value = new Date().toISOString().split('T')[0];
+            renderPayrollTable();
+        }
+        function addPayroll() {
+            const emp = db.master.find(e => e.id == $('payEmp').value);
+            const role = db.roles.find(r => r.name === emp.role);
+            const qty = parseInt($('payQty').value) || 1;
+            if(emp && role) { db.payroll.push({ id:Date.now(), date:$('payDate').value, empName:emp.name, qty:qty, total:qty*role.wage, status:'pending' }); saveAll(); renderPayrollTable(); renderDashboard(); }
+        }
+        function renderPayrollTable() {
+            const pending = db.payroll.filter(p => p.status === 'pending');
+            $('payrollBody').innerHTML = pending.map(p => `<tr><td class="p-4 text-xs text-slate-400">${formatDate(p.date)}</td><td class="p-4">${p.empName}</td><td class="p-4">${p.qty}x</td><td class="p-4 text-blue-600 font-extrabold">${formatRp(p.total)}</td><td class="p-4 flex gap-2"><button onclick="paySalary(${p.id})" class="bg-emerald-500 text-white text-[9px] px-4 py-2 rounded-xl font-black uppercase tracking-wider">Pay</button><button onclick="delPayroll(${p.id})" class="text-rose-300"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+        }
+        function paySalary(id) { const p = db.payroll.find(x => x.id === id); if(confirm(`Pay ${p.empName}?`)) { p.status = 'paid'; db.kas.push({ id:Date.now(), d:new Date().toISOString().split('T')[0], t:'keluar', k:`Gaji: ${p.empName}`, n:p.total }); saveAll(); renderPayrollTable(); renderKasTable(); } }
+        function delPayroll(id) { if(confirm("Hapus?")){ db.payroll = db.payroll.filter(p => p.id !== id); saveAll(); renderPayrollTable(); renderDashboard(); } }
+
+        function updateKasOptions() { const t = $('kasType').value; $('kasKetSelect').innerHTML = t === 'masuk' ? `<option value="Owner">Owner</option><option value="Sisa Saldo Admin">Sisa Saldo Admin</option><option value="Lainnya">Lainnya</option>` : `<option value="Iklan Shopee">Iklan Shopee</option><option value="Iklan TikTok">Iklan TikTok</option><option value="Bahan Baku">Bahan Baku</option><option value="Operasional">Operasional</option><option value="Lainnya">Lainnya</option>`; }
+        function checkLainnya() { if($('kasKetSelect').value === 'Lainnya') $('kasKetManual').classList.remove('hidden'); else $('kasKetManual').classList.add('hidden'); }
+        $('kasForm').onsubmit = e => { e.preventDefault(); const k = ($('kasKetSelect').value === 'Lainnya') ? $('kasKetManual').value : $('kasKetSelect').value; db.kas.push({ id: Date.now(), d: $('kasDate').value, t: $('kasType').value, k: k, n: parseRp($('kasJml').value) }); saveAll(); renderKasTable(); $('kasJml').value = ''; };
+        function renderKasTable() { 
+            const sD = $('kasFilterStart').value; const eD = $('kasFilterEnd').value;
+            let filtered = db.kas; if(sD && eD) filtered = db.kas.filter(k => k.d >= sD && k.d <= eD);
+            const sortedKas = filtered.sort((a,b)=>new Date(b.d)-new Date(a.d));
+            $('kasBody').innerHTML = sortedKas.map(k => `<tr><td class="p-4 text-[10px] text-slate-400">${formatDate(k.d)}</td><td class="p-4 font-black text-slate-700">${k.k}</td><td class="p-4 text-right font-black ${k.t==='masuk'?'text-emerald-600':'text-rose-600'}">${formatRp(k.n)}</td><td class="p-4 text-center"><button onclick="deleteKas(${k.id})" class="text-slate-200 hover:text-rose-500 transition-colors"><i class="fas fa-trash"></i></button></td></tr>`).join(''); 
+            renderDashboard(); 
+        }
+
+        function renderDashboard() {
+            const fV = $('dashFilter').value; if(!fV) return;
+            const [fY, fM] = fV.split('-').map(Number);
+            const sD = new Date(fY, fM - 1, 1); const eD = new Date(fY, fM, 0, 23, 59, 59);
+            let sA = 0, iB = 0, oB = 0;
+            db.kas.forEach(k => { const tD = new Date(k.d); if (tD < sD) { if(k.t === 'masuk') sA += k.n; else sA -= k.n; } else if (tD >= sD && tD <= eD) { if(k.t === 'masuk') iB += k.n; else oB += k.n; } });
+            $('homeSaldo').innerText = formatRp(sA + iB - oB); $('homeMasuk').innerText = formatRp(iB); $('homeKeluar').innerText = formatRp(oB);
+            let pg = 0; db.payroll.forEach(p => { if(p.status === 'pending') pg += p.total; }); 
+            $('homeGajiPending').innerText = formatRp(pg); $('homeEmp').innerText = db.master.length;
+        }
+
+        function preparePrintKas() {
+            const sD = $('kasFilterStart').value || new Date().toISOString().split('T')[0];
+            const eD = $('kasFilterEnd').value || new Date().toISOString().split('T')[0];
+            const filtered = db.kas.filter(k => k.d >= sD && k.d <= eD);
+            $('printHeaderTitle').innerText = "FINANCIAL REPORT";
+            $('labelTotalPrint').innerText = "NET BALANCE";
+            $('printHead').innerHTML = `<tr style=\"background-color: #f1f5f9;\"><th style=\"border:1px solid #000;padding:12px;\">Date</th><th colspan=\"2\" style=\"border:1px solid #000;padding:12px;\">Description</th><th style=\"border:1px solid #000;padding:12px;\">Amount</th></tr>`;
+            let total = 0;
+            $('printTableBody').innerHTML = filtered.map(k => { const val = k.t === 'masuk' ? k.n : -k.n; total += val; return `<tr><td style=\"border:1px solid #000;padding:10px;\">${formatDate(k.d)}</td><td colspan=\"2\" style=\"border:1px solid #000;padding:10px;\">${k.k}</td><td style=\"border:1px solid #000;padding:10px;text-align:right;\">${formatRp(k.n)}</td></tr>`; }).join('');
+            $('printTotalAkhir').innerText = formatRp(total); window.print();
+        }
+
+        function preparePrintGaji() {
+            const pending = db.payroll.filter(p => p.status === 'pending'); if(pending.length === 0) return alert("Data empty.");
+            $('printHeaderTitle').innerText = "PAYROLL RECAP";
+            $('printHead').innerHTML = `<tr style=\"background-color: #f1f5f9;\"><th style=\"border:1px solid #000;padding:12px;\">Date</th><th style=\"border:1px solid #000;padding:12px;\">Staff Name</th><th style=\"border:1px solid #000;padding:12px;\">Qty</th><th style=\"border:1px solid #000;padding:12px;\">Total</th></tr>`;
+            let total = 0;
+            $('printTableBody').innerHTML = pending.map(p => { total += p.total; return `<tr><td style=\"border:1px solid #000;padding:10px;\">${formatDate(p.date)}</td><td style=\"border:1px solid #000;padding:10px;\">${p.empName}</td><td style=\"border:1px solid #000;padding:10px;text-align:center;\">${p.qty}</td><td style=\"border:1px solid #000;padding:10px;text-align:right;\">${formatRp(p.total)}</td></tr>`; }).join('');
+            $('printTotalAkhir').innerText = formatRp(total); window.print();
+        }
+
+        function deleteKas(id) { if(confirm('Delete?')){ db.kas = db.kas.filter(k => k.id !== id); saveAll(); renderKasTable(); } }
+
+        window.onload = loadDB;
+    </script>
+</body>
+</html>
